@@ -93,7 +93,7 @@ public class Crawler {
 			// one of the validations for url format
 			if (baseUrl.contains(".")) {
 				URL url = new URL(baseUrl);
-				if (!pagesVisited.contains(baseUrl) && isInternalLink(url.getHost())) {
+				if (!pagesVisited.contains(baseUrl) && isInternalLink(baseUrl)) {
 
 					URLConnection urlConnection = null;
 					urlConnection = url.openConnection();
@@ -106,11 +106,7 @@ public class Crawler {
 
 						for (Element element : elements) {
 							String linkUrl = element.attr("href");
-							if (EnumSite.isNotExternal(linkUrl)) {
-								pagesVisited.add(linkUrl);
-							} else {
-								linkDetail.getExternalpagesVisited().add(linkUrl);
-							}
+							pagesVisited.add(linkUrl);
 						}
 						addImageLink(linkDetail, img);
 					}
@@ -154,7 +150,7 @@ public class Crawler {
 			// one of the validations for url format
 			if (baseUrl.contains(".")) {
 				URL url = new URL(baseUrl);
-				if (isInternalLink(url.getHost())) {
+				if (isInternalLink(baseUrl)) {
 
 					URLConnection urlConnection = null;
 					urlConnection = url.openConnection();
@@ -167,11 +163,7 @@ public class Crawler {
 
 						for (Element element : elements) {
 							String linkUrl = element.attr("href");
-							if (EnumSite.isNotExternal(linkUrl)) {
-								linkDetail.getInternalpagesVisited().add(linkUrl);
-							} else {
-								linkDetail.getExternalpagesVisited().add(linkUrl);
-							}
+							linkDetail.getInternalpagesVisited().add(linkUrl);
 						}
 						addImageLink(linkDetail, img);
 					}
@@ -210,9 +202,8 @@ public class Crawler {
 	 * @throws MalformedURLException
 	 */
 	public boolean isInternalLink(String linkHost) throws MalformedURLException {
-
 		boolean returnValue = false;
-		if (linkHost.contains(getBaseUr().getHost())) {
+		if (linkHost.contains("http://" + getBaseUr().getHost())) {
 			returnValue = true;
 		}
 		return returnValue;
@@ -230,7 +221,7 @@ public class Crawler {
 	}
 
 	/**
-	 * Method to set base url for testing purpose.	
+	 * Method to set base url for testing purpose.
 	 * 
 	 * @param string
 	 */
