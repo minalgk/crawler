@@ -6,6 +6,7 @@
 	<groupId>crawler</groupId>
 	<artifactId>crawler</artifactId>
 	<version>1.0-SNAPSHOT</version>
+	
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -18,12 +19,6 @@
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
 			<version>1.10.2</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.htmlparser/htmlparser -->
-		<dependency>
-			<groupId>org.htmlparser</groupId>
-			<artifactId>htmlparser</artifactId>
-			<version>2.1</version>
 		</dependency>
 
 	</dependencies>
