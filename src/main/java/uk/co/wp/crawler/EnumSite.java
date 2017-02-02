@@ -7,18 +7,8 @@ package uk.co.wp.crawler;
  *
  */
 public enum EnumSite {
-	FACEBOOK("facebook", false), TWITTER("twitter", false), AMAZON("amazon", false), EBAY("ebay", false), LINKEDIN(
-			"linkedin", false), GOOGLE("google", false), APPLE("apple", false), IAC("iac", false), VIMEO("vimeo",
-					false), CHEMISTRY("chemistry", false), DESIGNIT("designit", false), INSTAGRAM("instagram",
-							false), JCBINDIA("jcbindia", false), JCB("jcb", false), FASTCOEXIST("fastcoexist",
-									false), FASTCOMPANY("fastcompany", false), FASTCODESIGN("fastcodesign",
-											false), FASTCOCREATE("fastcocreate", false), FUTUREOFTRANSIT(
-													"futureoftransit",
-													false), ETOUCHES("etouches", false), PROMONEXT("promonext2016",
-															false), EISEEVERYWHERE("eiseverywhere", false), CHIEFMARKER(
-																	"chiefmarketer", false), HBR("hbr",
-																			false), BUSYSUB("buysub", false), HARVARD(
-																					"harvardbusinesspublishing", false);
+	FACEBOOK("facebook", false), TWITTER("twitter", false), AMAZON("amazon", false), EBAY("ebay",
+			false), LINKEDIN("linkedin", false), GOOGLE("google", false), OTHERS("External link Pages.", false);
 
 	private final String site;
 	private final boolean isInternal;
@@ -33,7 +23,13 @@ public enum EnumSite {
 		this.isInternal = isInternal;
 	}
 
-	public static boolean isInternalSite(String site) {
+	/**
+	 * Method to identify particular external sites.
+	 * 
+	 * @param site
+	 * @return
+	 */
+	public static boolean isNotExternal(String site) {
 		boolean returnValue = true;
 		for (EnumSite enumSite : EnumSite.values()) {
 			if (site.contains(enumSite.getSite())) {
@@ -43,10 +39,20 @@ public enum EnumSite {
 		return returnValue;
 	}
 
+	/**
+	 * Method to get sites.
+	 * 
+	 * @return
+	 */
 	public String getSite() {
 		return site;
 	}
 
+	/**
+	 * Method to identify if internal site.
+	 * 
+	 * @return
+	 */
 	public boolean isInternal() {
 		return isInternal;
 	}

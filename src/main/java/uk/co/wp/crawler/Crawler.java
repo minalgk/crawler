@@ -1,15 +1,19 @@
 package uk.co.wp.crawler;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -24,16 +28,11 @@ import org.jsoup.select.Elements;
  */
 public class Crawler {
 
-	public static final String URL_REGEX = "^((https?|ftp)://|(www|ftp)\\.)?[a-z0-9-]+(\\.[a-z0-9-]+)+([/?].*)?$";
-
-
-	
 	private String fileName;
-	private List<String> links;
 	private String baseUrl;
 	private Set<String> pagesVisited = new HashSet<String>();
-	// private List<String> pagesToVisit = new LinkedList<String>();
-	Queue<String> pagesToVisit = new ConcurrentLinkedQueue<String>();
+	private List<LinkDetails> listListDetails = new ArrayList<LinkDetails>();
+	String solutionFileName = "CrawlerSolution.txt";
 
 	/**
 	 * Constructor to read file.
@@ -42,7 +41,6 @@ public class Crawler {
 	 */
 	Crawler(String fileInput) {
 		this.fileName = fileInput;
-		this.links = new ArrayList<String>();
 	}
 
 	/**
@@ -50,17 +48,18 @@ public class Crawler {
 	 */
 	public void startCrawling() {
 		try {
-			System.out.println("Inside startCrawling");
 			ClassLoader classLoader = getClass().getClassLoader();
 			File file = new File(classLoader.getResource(fileName).getFile());
 			Scanner webUrl = new Scanner(file);
 			while (webUrl.hasNextLine()) {
-				baseUrl = webUrl.nextLine();
+				this.baseUrl = webUrl.nextLine();
 				System.out.println("URL crawling= " + baseUrl);
+				System.out.println("Processing..... ");
 			}
+			getParentUrlLinks();
+			getChildUrlLinks();
+			writeToFile();
 
-			getPageLinks(baseUrl);
-			System.out.println("MMMMMMMMM" + links.size());
 			if (webUrl != null) {
 				webUrl.close();
 			}
@@ -69,90 +68,173 @@ public class Crawler {
 		}
 	}
 
-	public void getPageLinks(String url) {
-		// 4. Check if you have already crawled the URLs
-		// (we are intentionally not checking for duplicate content in this
-		// example)
-		// !links.contains(url) &&
-		if (isInternalLink(url)) {
-			try {
-				// 4. (i) If not add it to the index
-				if (links.add(url)) {
-					System.out.println(url);
-				}
-
-				// 2. Fetch the HTML code
-				Document document = Jsoup.connect(url).get();
-				// 3. Parse the HTML to extract links to other URLs
-				Elements linksOnPage = document.select("a[href]");
-
-				// 5. For each extracted URL... go back to Step 4.
-				for (Element page : linksOnPage) {
-					System.out.println("*************************page.attr href****" + page.attr("href"));
-
-					getPageLinks(page.attr("href"));
-				}
-
-			} catch (IOException e) {
-				System.err.println("For '" + url + "': " + e.getMessage());
-			}
-
+	/**
+	 * Utility method to write solution to file.
+	 * 
+	 * @throws IOException
+	 */
+	private void writeToFile() throws IOException {
+		BufferedWriter writer = Files.newBufferedWriter(Paths.get(solutionFileName));
+		for (LinkDetails itm : listListDetails) {
+			writer.write(itm.toString());
 		}
+		System.out.println("Writing solution to file: " + solutionFileName);
 	}
 
-	private void readPage(String url) {
-		// get useful information
-		Document doc;
+	/**
+	 * Method to identify links of page.
+	 * 
+	 * @throws MalformedURLException
+	 */
+	private void getParentUrlLinks() throws MalformedURLException {
+		LinkDetails linkDetail = new LinkDetails(baseUrl);
+
 		try {
-			doc = Jsoup.connect(url).get();
+			// one of the validations for url format
+			if (baseUrl.contains(".")) {
+				URL url = new URL(baseUrl);
+				if (!pagesVisited.contains(baseUrl) && isInternalLink(url.getHost())) {
 
-			pagesVisited.add(url);
+					URLConnection urlConnection = null;
+					urlConnection = url.openConnection();
 
-			// get all links and recursively call the processPage method
-			Elements questions = doc.select("a[href]");
-			for (Element link : questions) {
-				// part of internal site.
-				// url.contains(link.attr("href")) EnumSite.isInternalSite(url)
-				// &&
-				// if ( EnumSite.isInternalSite(url)) {
-				pagesToVisit.add(link.text());
+					try (InputStream input = urlConnection.getInputStream()) {
 
-				// }
+						Document doc = Jsoup.parse(input, "UTF-8", "");
+						Elements elements = doc.select("a");
+						Elements img = doc.select("img");
 
+						for (Element element : elements) {
+							String linkUrl = element.attr("href");
+							if (EnumSite.isNotExternal(linkUrl)) {
+								pagesVisited.add(linkUrl);
+							} else {
+								linkDetail.getExternalpagesVisited().add(linkUrl);
+							}
+						}
+						addImageLink(linkDetail, img);
+					}
+				} else {
+					linkDetail.getExternalpagesVisited().add(baseUrl);
+				}
+				linkDetail.getInternalpagesVisited().addAll(pagesVisited);
+			} else {
+				// Invalid URL
+				linkDetail.getInvalidUrl().add(baseUrl);
 			}
+			listListDetails.add(linkDetail);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println("For '" + baseUrl + "': " + e.getMessage());
 		}
 	}
 
-	public boolean isInternalLink(String link) {
-		
-		System.out.println("baseUrl:"+baseUrl);
-		System.out.println("link:"+link);
+	/**
+	 * Method to add image links on particular url.
+	 * 
+	 * @param linkDetail
+	 * @param img
+	 */
+	private void addImageLink(LinkDetails linkDetail, Elements img) {
+		for (Element el : img) {
+			String imgSrc = el.attr("src");
+			linkDetail.getImgScr().add(imgSrc);
+		}
+	}
+
+	/**
+	 * Utility method to identify links.
+	 * 
+	 * @param baseUrl
+	 * @throws MalformedURLException
+	 */
+	private void getDetailedPageLinks(String baseUrl) throws MalformedURLException {
+		LinkDetails linkDetail = new LinkDetails(baseUrl);
+
+		try {
+			// one of the validations for url format
+			if (baseUrl.contains(".")) {
+				URL url = new URL(baseUrl);
+				if (isInternalLink(url.getHost())) {
+
+					URLConnection urlConnection = null;
+					urlConnection = url.openConnection();
+
+					try (InputStream input = urlConnection.getInputStream()) {
+
+						Document doc = Jsoup.parse(input, "UTF-8", "");
+						Elements elements = doc.select("a");
+						Elements img = doc.select("img");
+
+						for (Element element : elements) {
+							String linkUrl = element.attr("href");
+							if (EnumSite.isNotExternal(linkUrl)) {
+								linkDetail.getInternalpagesVisited().add(linkUrl);
+							} else {
+								linkDetail.getExternalpagesVisited().add(linkUrl);
+							}
+						}
+						addImageLink(linkDetail, img);
+					}
+				}
+			} else {
+				// Invalid URL
+				linkDetail.getInvalidUrl().add(baseUrl);
+			}
+			listListDetails.add(linkDetail);
+
+		} catch (IOException e) {
+			System.err.println("For '" + baseUrl + "': " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Utility method to identify sub links of page.
+	 * 
+	 * @throws MalformedURLException
+	 */
+	private void getChildUrlLinks() throws MalformedURLException {
+		pagesVisited.forEach(item -> {
+			try {
+				getDetailedPageLinks(item);
+			} catch (Exception e) {
+				System.err.println("For '" + item + "': " + e.getMessage());
+			}
+		});
+	}
+
+	/**
+	 * Method to identify iternal links.
+	 * 
+	 * @param linkHost
+	 * @return
+	 * @throws MalformedURLException
+	 */
+	public boolean isInternalLink(String linkHost) throws MalformedURLException {
 
 		boolean returnValue = false;
-		if (link.contains("wiprodigital.com")) {
+		if (linkHost.contains(getBaseUr().getHost())) {
 			returnValue = true;
 		}
 		return returnValue;
 	}
 
-	String pageVisitedToString() {
-		StringBuilder result = new StringBuilder();
-		for (String item : pagesToVisit) {
-			result.append(item);
-			result.append("\n"); // optional
-		}
-		return result.toString();
+	/**
+	 * Utility method to get base url.
+	 * 
+	 * @return
+	 * @throws MalformedURLException
+	 */
+	public URL getBaseUr() throws MalformedURLException {
+		URL url = new URL(baseUrl);
+		return url;
 	}
 
-	public String getBaseUrl() {
-		return baseUrl;
+	/**
+	 * Method to set base url for testing purpose.	
+	 * 
+	 * @param string
+	 */
+	public void setBaseUrl(String string) {
+		this.baseUrl = string;
 	}
-
-	public void setBaseUrl(String baseUrl) {
-		this.baseUrl = baseUrl;
-	}
-
 }
