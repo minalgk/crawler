@@ -11,7 +11,7 @@
    
 ---------------------------------------------------------------
 ************** How to Run**********
-   1. The package is written using Eclipse IDE with Java 8.
+   1. The package is written using Eclipse IDE with Java 8, please update the build path to use Java 8.
    2. When the user runs the program from Explorer class which has main method and the solution is written to CrawlerSolution.txt file.
 -----------------------------------------------------------------
 ************Scope for further enhancements*********************** 
