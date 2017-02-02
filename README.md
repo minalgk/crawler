@@ -6,7 +6,7 @@
 1. Crawler program reads URL to crawl from "WebUrl" file.
 2. Program reads all the links and image source for base/parent URL (from the file) and then it reads l
    inks and image source of sub links/child links to base URL (from the file).
-4. Crawling information is stored in "List<LinkDetails>" object which is written to file under \target\CrawlerSolution.
+4. Crawling information is stored in "List<LinkDetails>" object which is written to file under project folder \CrawlerSolution.
 5. I am utilising "jsoup"library to ready the elements (i.e img) and iterating  elements based on attributes (i.e src)
    
 ---------------------------------------------------------------
